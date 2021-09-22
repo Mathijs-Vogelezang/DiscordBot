@@ -1,14 +1,13 @@
 package Barfbot.leaderboard;
 
+import Barfbot.exceptions.NegativePointsException;
+
 import java.io.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 public class Leaderboard {
     private String name;
-    private Map<String, Integer> scores = new HashMap<>(); // the name and the score of the people in the leaderboard
+    private Map<String, Integer> scores = new LinkedHashMap<>(); // the name and the score of the people in the leaderboard
     public static final String DATA_LOCATION = "src/main/java/Barfbot/leaderboard/leaderboardData/";
     private File dataFile;
     private String messageId; // the id of the message the leaderboard is shown on
@@ -67,18 +66,32 @@ public class Leaderboard {
         this.name = name;
     }
 
+    public void sortLeaderboard() {
+        List<Map.Entry<String, Integer>> entries = new ArrayList<>(scores.entrySet());
+        entries.sort(Map.Entry.comparingByValue(Comparator.reverseOrder())); // sort the entries from high to low
+
+        for (Map.Entry<String, Integer> entry : entries) {
+            scores.put(entry.getKey(), entry.getValue());
+        }
+    }
+
     public void increment(String name) {
         int points = scores.getOrDefault(name, 0);
         scores.put(name, points + 1);
+        sortLeaderboard();
         saveLeaderboard();
     }
 
-    public void decrement(String name) {
+    public void decrement(String name) throws NegativePointsException {
         int points = scores.getOrDefault(name, 0);
 
         if (points > 0) {
             scores.put(name, points - 1);
+        } else {
+            throw new NegativePointsException();
         }
+
+        sortLeaderboard();
         saveLeaderboard();
     }
 }
